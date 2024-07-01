@@ -1,7 +1,6 @@
 import json
 import requests
 import base64
-from googletrans import Translator
 from langdetect import detect
 from pydub import AudioSegment
 import io
@@ -18,26 +17,26 @@ def Translate_to_func(text, lang='hi'):
     translated = translator.translate(text, src='en', dest=lang)
     return translated.text  # Return the translated text
 
-def fetch_audio(text, option="MALE"):
+def fetch_audio(text, option="FEMALE",lang="en-US"):
     api_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNTNhMDdmMTUtZGY2OC00MGY1LThlOTctMzQwOWZlNGQ3MGIzIiwidHlwZSI6ImFwaV90b2tlbiJ9.Agsx4L1XtyLX-xKTEUPHEoN0kBqtuetLeoyLU8xoYvs"  # Replace with your actual API key
     headers = {"Authorization": f"Bearer {api_key}"}
     url = "https://api.edenai.run/v2/audio/text_to_speech"
     payload = {
         "show_original_response": False,
         "fallback_providers": "",
-        "providers": "elevenlabs",
-        "language": "hi-IN",
+        "providers": "microsoft",
+        "language": lang,
         "option": option,
         "text": text
     }
-
+    print("fetch api")
     response = requests.post(url, json=payload, headers=headers)
-
+    print("fetched")
     if response.status_code == 200:
         result = json.loads(response.text)
         
-        if 'elevenlabs' in result and 'audio_resource_url' in result['elevenlabs']:
-            audio_url = result['elevenlabs']['audio_resource_url']
+        if 'microsoft' in result and 'audio_resource_url' in result['microsoft']:
+            audio_url = result['microsoft']['audio_resource_url']
             audio_response = requests.get(audio_url)
 
             if audio_response.status_code == 200:
@@ -51,7 +50,7 @@ def fetch_audio(text, option="MALE"):
     else:
         print(f"API request failed with status code: {response.status_code}")
 
-def final_audio(text_doc,path=""):
+def final_audio(text_doc,path="",lang=["en-US","en"]):
     text = text_doc.split(".")
     concatenated_audio1 = AudioSegment.empty()
     concatenated_audio2 = AudioSegment.empty()
@@ -63,8 +62,7 @@ def final_audio(text_doc,path=""):
             concatenated_audio2+=beep_segment-100
         if i and i.strip() and i!="@123": 
             print(i)
-            translated_text = Translate_to_func(i, 'en')
-            audio_segment = fetch_audio(translated_text)
+            audio_segment = fetch_audio(i,lang=lang[0])
             if audio_segment:
                 concatenated_audio1+= audio_segment-100
                 concatenated_audio2+=audio_segment
